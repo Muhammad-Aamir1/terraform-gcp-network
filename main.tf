@@ -15,8 +15,9 @@ resource "google_compute_network" "vpc" {
   auto_create_subnetworks = false # Team B requires manual subnet control
 }
 
+# Inside your terraform-gcp-network/main.tf
 resource "google_compute_subnetwork" "subnet" {
-  name          = "\${var.network_name}-subnet"
+  name          = "${var.network_name}-subnet" # <-- Removed the backslash
   ip_cidr_range = var.subnet_cidr
   region        = var.region
   network       = google_compute_network.vpc.id
