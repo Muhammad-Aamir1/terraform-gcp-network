@@ -3,18 +3,24 @@ name: GCP Google Cloud Deployment
 on:
   push:
     branches:
-      - main          # Triggers when a PR gets merged (or code is pushed directly) to main
+      - main
   pull_request:
     branches:
-      - main          # Triggers whenever a PR is opened, updated, or reopened targeting main
+      - main
 
 permissions:
-  contents: read      # Required to check out your repository code
-  id-token: write     # Required to mint the OIDC JWT token for Google WIF
+  contents: read
+  id-token: write
 
 jobs:
   gcp-deploy-pipeline:
     runs-on: ubuntu-latest
+
+    # Injecting the variables required by main.tf here 👇
+    env:
+      TF_VAR_network_name: "production-vpc-network"
+      TF_VAR_subnet_cidr:  "10.0.1.0/24"
+      TF_VAR_region:       "us-central1"
 
     steps:
     - name: Checkout Repository Source Code
@@ -27,21 +33,20 @@ jobs:
         workload_identity_provider: 'projects/1071259937608/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
         service_account: 'github-actions-sa@project-4d670ee4-c2ac-4050-8e8.iam.gserviceaccount.com'
 
-    # Sets up the official Terraform CLI on the runner engine
     - name: 'Setup Terraform'
       uses: hashicorp/setup-terraform@v4
       with:
-        terraform_version: "latest" # Pins to the latest stable binary
+        terraform_version: "latest"
 
     - name: 'Terraform Init'
       run: terraform init
 
-    # 1. RUNS ONLY ON PULL REQUESTS: Generates a speculative dry-run execution plan
+    # Runs on Pull Request: Will use the env variables above automatically
     - name: 'Terraform Plan'
       if: github.event_name == 'pull_request'
       run: terraform plan
 
-    # 2. RUNS ONLY ON MERGES TO MAIN: Automatically executes changes after PR is closed
+    # Runs on Merge to Main: Will use the env variables above automatically
     - name: 'Terraform Apply'
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: terraform apply -auto-approve
