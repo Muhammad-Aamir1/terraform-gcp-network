@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,9 +19,10 @@ jobs:
 
     # Injecting the variables required by main.tf here 👇
     env:
-      TF_VAR_network_name: "production-vpc-network"
-      TF_VAR_subnet_cidr:  "10.0.1.0/24"
-      TF_VAR_region:       "us-central1"
+      TF_VAR_project:      ${{ secrets.GCP_PROJECT_ID }}
+      TF_VAR_network_name: ${{ secrets.GCP_NETWORK_NAME }}
+      TF_VAR_subnet_cidr:  ${{ secrets.GCP_SUBNET_CIDR }}
+      TF_VAR_region:       ${{ secrets.GCP_REGION }}
 
     steps:
     - name: Checkout Repository Source Code
@@ -30,8 +32,8 @@ jobs:
       name: 'Authenticate to Google Cloud via Keyless WIF'
       uses: 'google-github-actions/auth@v2'
       with:
-        workload_identity_provider: 'projects/1071259937608/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-        service_account: 'github-actions-sa@project-4d670ee4-c2ac-4050-8e8.iam.gserviceaccount.com'
+        workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
 
     - name: 'Setup Terraform'
       uses: hashicorp/setup-terraform@v4
@@ -39,14 +41,14 @@ jobs:
         terraform_version: "latest"
 
     - name: 'Terraform Init'
-      run: terraform init
+      run: terraform init -input=false -backend-config="bucket=${{ secrets.GCS_STATE_BUCKET }}" -backend-config="prefix=${{ secrets.GCS_STATE_PREFIX }}"
 
     # Runs on Pull Request: Will use the env variables above automatically
     - name: 'Terraform Plan'
       if: github.event_name == 'pull_request'
-      run: terraform plan
+      run: terraform plan -input=false
 
     # Runs on Merge to Main: Will use the env variables above automatically
     - name: 'Terraform Apply'
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: terraform apply -auto-approve
+      run: terraform apply -input=false -auto-approve

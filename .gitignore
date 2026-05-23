@@ -1,0 +1,33 @@
+# Terraform local state files
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+*.tfstate.lock
+crash.log
+
+# Terraform variable definitions with sensitive values
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Terraform CLI configuration
+terraform.rc
+.terraformrc
+
+# Local editor and OS metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.log
+.DS_Store
+Thumbs.db
+
+# Optional local credentials / secrets
+*credentials*.json
+*service_account*.json
+*gcp_key*.json
+secrets.txt
