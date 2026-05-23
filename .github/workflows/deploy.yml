@@ -1,0 +1,47 @@
+name: GCP Google Cloud Deployment
+
+on:
+  push:
+    branches:
+      - main          # Triggers when a PR gets merged (or code is pushed directly) to main
+  pull_request:
+    branches:
+      - main          # Triggers whenever a PR is opened, updated, or reopened targeting main
+
+permissions:
+  contents: read      # Required to check out your repository code
+  id-token: write     # Required to mint the OIDC JWT token for Google WIF
+
+jobs:
+  gcp-deploy-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository Source Code
+      uses: actions/checkout@v4
+
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud via Keyless WIF'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        workload_identity_provider: 'projects/1071259937608/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+        service_account: 'github-actions-sa@project-4d670ee4-c2ac-4050-8e8.iam.gserviceaccount.com'
+
+    # Sets up the official Terraform CLI on the runner engine
+    - name: 'Setup Terraform'
+      uses: hashicorp/setup-terraform@v4
+      with:
+        terraform_version: "latest" # Pins to the latest stable binary
+
+    - name: 'Terraform Init'
+      run: terraform init
+
+    # 1. RUNS ONLY ON PULL REQUESTS: Generates a speculative dry-run execution plan
+    - name: 'Terraform Plan'
+      if: github.event_name == 'pull_request'
+      run: terraform plan
+
+    # 2. RUNS ONLY ON MERGES TO MAIN: Automatically executes changes after PR is closed
+    - name: 'Terraform Apply'
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: terraform apply -auto-approve
