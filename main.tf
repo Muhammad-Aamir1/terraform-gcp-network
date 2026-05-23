@@ -25,3 +25,5 @@ resource "google_compute_subnetwork" "subnet" {
 variable "network_name" { type = string }
 variable "subnet_cidr"  { type = string }
 variable "region"       { type = string }
+
+#adding a comment to trigger a new commit for the demo
