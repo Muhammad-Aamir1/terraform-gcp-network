@@ -9,4 +9,4 @@ resource "google_compute_subnetwork" "subnet" {
   region        = var.region
   network       = google_compute_network.vpc.id
 }
-
+#adding a comment to trigger a new commit for the demo
